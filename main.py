@@ -34,5 +34,39 @@ async def go(ctx):
             await ctx.send("Failed to upload an image of the pokémon.")
     else:
         await ctx.send("You've already created your own Pokémon.")  # A message that is printed whether a Pokémon has already been created
+
+@bot.command()
+async def attack(ctx):
+    target = ctx.message.mentions[0] if ctx.message.mentions else None
+    if target:
+        if target.name in Pokemon.pokemons and ctx.author.name in Pokemon.pokemons:
+            enemy = Pokemon.pokemons[target.name]
+            attacker = Pokemon.pokemons[ctx.author.name]
+            result = await attacker.attack(enemy)
+            await ctx.send(result)
+        else:
+            await ctx.send("Kedua pemain harus memiliki Pokémon untuk pertarungan!")
+    else:
+        await ctx.send("Tetapkan pemain yang ingin Anda serang dengan menyebutnya.")
+
+@bot.command()
+async def info(ctx):
+    author = ctx.author.name
+    if author in Pokemon.pokemons:
+        pokemon = Pokemon.pokemons[author]
+        await ctx.send(await pokemon.info())
+    else:
+        await ctx.send("Anda tidak memiliki Pokémon!")
+
+@bot.command()
+async def feed(ctx):
+    author = ctx.author.name
+    if author in Pokemon.pokemons:
+        pokemon = Pokemon.pokemons[author]
+        response = await pokemon.feed()
+        await ctx.send(response)
+    else:
+        await ctx.send("Anda tidak memiliki pokemon!")
+
 # Running the bot
 bot.run(token)

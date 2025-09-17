@@ -1,13 +1,21 @@
 import aiohttp  # A library for asynchronous HTTP requests
 import random
+from random import randint
+from datetime import datetime, timedelta
 
-class Pokemon:
+class Pokemon():
     pokemons = {}
     # Object initialisation (constructor)
     def __init__(self, pokemon_trainer):
         self.pokemon_trainer = pokemon_trainer
         self.pokemon_number = random.randint(1, 1000)
         self.name = None
+        
+        self.img = None
+        self.power = random.randint(30,60)
+        self.hp = random.randint(200,400)
+        self.last_feed_time = datetime.now()
+
         if pokemon_trainer not in Pokemon.pokemons:
             Pokemon.pokemons[pokemon_trainer] = self
         else:
@@ -28,7 +36,21 @@ class Pokemon:
         # A method that returns information about the pokémon
         if not self.name:
             self.name = await self.get_name()  # Retrieving a name if it has not yet been uploaded
-        return f"The name of your Pokémon: {self.name}"  # Returning the string with the Pokémon's name
+        return f"""
+                The name of your Pokémon: {self.name}
+                Power: {self.power}
+                HP: {self.hp}
+                """  # Returning the string with the Pokémon's name
+    
+    async def feed(self, feed_interval = 20, hp_increase = 10 ):
+        current_time = datetime.current()  
+        delta_time = timedelta(hours=feed_interval)  
+        if (current_time - self.last_feed_time) > delta_time:
+            self.hp += hp_increase
+            self.last_feed_time = current_time
+            return f"Kesehatan Pokemon dipulihkan. HP saat ini: {self.hp}"
+        else:
+            return f"Kalian dapat memberi makan Pokémon kalian di: {current_time+delta_time}"
 
     async def show_img(self):
         # An asynchronous method to retrieve the URL of a pokémon image via PokeAPI
@@ -37,6 +59,38 @@ class Pokemon:
             async with session.get(url) as response:  # Sending a GET request
                 if response.status == 200:
                     data = await response.json()
-                    return data['sprites']['other']['official-artwork']['front_default']
+
+                    img_url=data['sprites']['other']['official-artwork']['front_default']
+
+                    return img_url
                 else:
                     return "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
+                
+    async def attack(self, enemy):
+        if isinstance(enemy, Wizard):
+            chance = random.randint(1, 5)
+            if chance == 1:
+                return "Pokemon Penyihir menggunakan perisai dalam pertarungan"
+        if enemy.hp > self.power:
+            enemy.hp -= self.power
+            return f"Pertarungan @{self.pokemon_trainer} melawan @{enemy.pokemon_trainer}\nHP @{enemy.pokemon_trainer} sekarang {enemy.hp}"
+        else:
+            enemy.hp = 0
+            return f"@{self.pokemon_trainer} menang melawan @{enemy.pokemon_trainer}!"
+        
+class Wizard(Pokemon):
+    async def feed(self):
+        return await super().feed(hp_increase=20)
+    
+class Fighter(Pokemon):
+    async def attack(self, enemy):
+        super_power = random.randint(5, 15)
+        self.power += super_power
+        result = await super().attack(enemy)
+        self.power -= super_power
+        return result + f"\nPetarung menggunakan serangan super dengan kekuatan:{super_power}"
+    
+    async def feed(self):
+        return await super().feed(hp_increase=20)
+
+
